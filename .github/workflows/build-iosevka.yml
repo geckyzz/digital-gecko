@@ -1,0 +1,67 @@
+name: Build Iosevka Custom Font
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'digitalgecko.toml'
+      - '.github/workflows/build-iosevka.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install ttfautohint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ttfautohint
+
+      - name: Clone Iosevka repository
+        run: |
+          cd /tmp
+          git clone --depth 1 https://github.com/be5invis/Iosevka.git
+          cd Iosevka
+          npm install
+
+      - name: Copy custom configuration
+        run: |
+          cp digitalgecko.toml /tmp/Iosevka/private-build-plans.toml
+
+      - name: Build font
+        run: |
+          cd /tmp/Iosevka
+          npm run build -- contents::DigitalGecko
+
+      - name: Create release directory
+        run: |
+          mkdir -p release
+          find /tmp/Iosevka/dist -type f \( -name "*.ttf" -o -name "*.otf" -o -name "*.woff2" -o -name "*.css" \) -exec cp {} release/ \;
+          ls -lh release/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iosevka-digital-gecko-fonts
+          path: release/
+          retention-days: 90
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*

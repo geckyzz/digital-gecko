@@ -1,0 +1,17 @@
+# Build artifacts
+dist/
+node_modules/
+*.ttf
+*.otf
+*.woff2
+*.css
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
