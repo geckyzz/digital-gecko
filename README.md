@@ -24,6 +24,7 @@ the configuration is defined in `digitalgecko.toml` using Iosevka's build system
 
 - Node.js 18 or higher
 - ttfautohint (for hinting)
+- [Task](https://taskfile.dev) (task runner)
 
 on Debian/Ubuntu:
 ```bash
@@ -33,29 +34,31 @@ sudo apt-get install ttfautohint
 on macOS with Homebrew:
 ```bash
 brew install ttfautohint
+brew install go-task/tap/go-task
 ```
 
-### build steps
+### quick start
 
-1. Clone this repository
-2. Clone Iosevka into a temporary location:
+simply run:
 ```bash
-git clone --depth 1 https://github.com/be5invis/Iosevka.git /tmp/Iosevka
-cd /tmp/Iosevka
-npm install
+task all
 ```
 
-3. Copy the configuration:
+this clones Iosevka, installs dependencies, builds the font, and copies artifacts to the `dist/` directory.
+
+### available tasks
+
 ```bash
-cp /path/to/digital-gecko/digitalgecko.toml /tmp/Iosevka/private-build-plans.toml
+task list              # show all available tasks
+task clone             # clone Iosevka repository
+task install           # install Iosevka dependencies
+task build             # build Digital Gecko font
+task copy-fonts        # copy fonts to dist directory
+task all               # complete build process
+task clean             # remove all build artifacts
+task clean-dist        # remove only dist directory
+task list-fonts        # list built fonts
 ```
-
-4. Build the font:
-```bash
-npm run build -- contents::DigitalGecko
-```
-
-5. Find the built fonts in `/tmp/Iosevka/dist/`
 
 ## automated builds
 

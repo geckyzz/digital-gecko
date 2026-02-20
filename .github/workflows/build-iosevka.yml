@@ -26,31 +26,23 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install ttfautohint
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y ttfautohint
 
-      - name: Clone Iosevka repository
-        run: |
-          cd /tmp
-          git clone --depth 1 https://github.com/be5invis/Iosevka.git
-          cd Iosevka
-          npm install
+      - name: Install Task
+        uses: arduino/setup-task@v1
+        with:
+          version: 3.x
 
-      - name: Copy custom configuration
-        run: |
-          cp digitalgecko.toml /tmp/Iosevka/private-build-plans.toml
+      - name: Build font with Task
+        run: task all
 
-      - name: Build font
-        run: |
-          cd /tmp/Iosevka
-          npm run build -- contents::DigitalGecko
-
-      - name: Create release directory
+      - name: Prepare artifacts
         run: |
           mkdir -p release
-          find /tmp/Iosevka/dist -type f \( -name "*.ttf" -o -name "*.otf" -o -name "*.woff2" -o -name "*.css" \) -exec cp {} release/ \;
+          [ -d dist ] && cp dist/* release/ || true
           ls -lh release/
 
       - name: Upload artifacts

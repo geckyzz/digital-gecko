@@ -1,0 +1,69 @@
+version: '3'
+
+vars:
+  IOSEVKA_DIR: /tmp/Iosevka
+  BUILD_PLAN: DigitalGecko
+  DIST_DIR: ./dist
+
+tasks:
+  clone:
+    desc: Clone Iosevka repository
+    cmds:
+      - git clone --depth 1 https://github.com/be5invis/Iosevka.git {{.IOSEVKA_DIR}}
+    status:
+      - test -d {{.IOSEVKA_DIR}}
+
+  install:
+    desc: Install Iosevka dependencies
+    deps:
+      - clone
+    dir: "{{.IOSEVKA_DIR}}"
+    cmds:
+      - npm install
+    status:
+      - test -d {{.IOSEVKA_DIR}}/node_modules
+
+  setup-config:
+    desc: Copy custom configuration to Iosevka build directory
+    deps:
+      - install
+    cmds:
+      - cp digitalgecko.toml {{.IOSEVKA_DIR}}/private-build-plans.toml
+
+  build:
+    desc: Build Digital Gecko font
+    deps:
+      - setup-config
+    dir: "{{.IOSEVKA_DIR}}"
+    cmds:
+      - npm run build -- contents::{{.BUILD_PLAN}}
+
+  copy-fonts:
+    desc: Copy built fonts to project dist directory
+    deps:
+      - build
+    cmds:
+      - mkdir -p {{.DIST_DIR}}
+      - find {{.IOSEVKA_DIR}}/dist -type f \( -name "*.ttf" -o -name "*.otf" -o -name "*.woff2" -o -name "*.css" \) -exec cp {} {{.DIST_DIR}}/ \;
+      - ls -lh {{.DIST_DIR}}/
+
+  all:
+    desc: Complete build process (clone, install, build, copy)
+    deps:
+      - copy-fonts
+
+  clean:
+    desc: Clean build artifacts and temporary files
+    cmds:
+      - rm -rf {{.DIST_DIR}}
+      - rm -rf {{.IOSEVKA_DIR}}
+
+  clean-dist:
+    desc: Clean only dist directory
+    cmds:
+      - rm -rf {{.DIST_DIR}}
+
+  list-fonts:
+    desc: List built fonts in dist directory
+    cmds:
+      - ls -lh {{.DIST_DIR}} || echo "No fonts built yet. Run 'task all' first."
