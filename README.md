@@ -22,7 +22,7 @@ the configuration is defined in `digitalgecko.toml` using Iosevka's build system
 
 ### prerequisites
 
-- Node.js 18 or higher
+- Node.js 20 or higher (22+ recommended)
 - ttfautohint (for hinting)
 - [Task](https://taskfile.dev) (task runner)
 
