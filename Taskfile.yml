@@ -37,15 +37,36 @@ tasks:
     dir: "{{.IOSEVKA_DIR}}"
     cmds:
       - npm run build -- contents::{{.BUILD_PLAN}}
+      - npm run build -- ttc::{{.BUILD_PLAN}}
+      - npm run build -- super-ttc::{{.BUILD_PLAN}}
 
   copy-fonts:
-    desc: Copy built fonts to project dist directory
+    desc: Copy and organize built fonts to project dist directory
     deps:
       - build
     cmds:
-      - mkdir -p {{.DIST_DIR}}
-      - find {{.IOSEVKA_DIR}}/dist -type f \( -name "*.ttf" -o -name "*.otf" -o -name "*.woff2" -o -name "*.css" \) -exec cp {} {{.DIST_DIR}}/ \;
-      - ls -lh {{.DIST_DIR}}/
+      - mkdir -p {{.DIST_DIR}}/ttf {{.DIST_DIR}}/woff2 {{.DIST_DIR}}/ttc
+      - |
+        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF-Unhinted/*.ttf; do
+          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/ttf/$(basename "$file" .ttf)-Unhinted.ttf"
+        done
+      - |
+        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF/*.ttf; do
+          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/ttf/$(basename "$file")"
+        done
+      - |
+        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2-Unhinted/*.woff2; do
+          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/woff2/$(basename "$file" .woff2)-Unhinted.woff2"
+        done
+      - |
+        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2/*.woff2; do
+          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/woff2/$(basename "$file")"
+        done
+      - find {{.IOSEVKA_DIR}}/dist/.ttc -name "*.ttc" -type f -exec cp {} {{.DIST_DIR}}/ttc/ \; 2>/dev/null || true
+      - find {{.IOSEVKA_DIR}}/dist/.super-ttc -name "*.ttc" -type f -exec cp {} {{.DIST_DIR}}/ttc/ \; 2>/dev/null || true
+      - echo "TTF files:" && ls -1 {{.DIST_DIR}}/ttf/ | wc -l
+      - echo "WOFF2 files:" && ls -1 {{.DIST_DIR}}/woff2/ | wc -l
+      - echo "TTC files:" && ls -1 {{.DIST_DIR}}/ttc/ 2>/dev/null | wc -l || echo "0"
 
   all:
     desc: Complete build process (clone, install, build, copy)
@@ -66,4 +87,4 @@ tasks:
   list-fonts:
     desc: List built fonts in dist directory
     cmds:
-      - ls -lh {{.DIST_DIR}} || echo "No fonts built yet. Run 'task all' first."
+      - test -d {{.DIST_DIR}} && (echo "TTF:" && ls {{.DIST_DIR}}/ttf/ 2>/dev/null | wc -l && echo "WOFF2:" && ls {{.DIST_DIR}}/woff2/ 2>/dev/null | wc -l && echo "TTC:" && ls {{.DIST_DIR}}/ttc/ 2>/dev/null | wc -l) || echo "No fonts built yet. Run 'task all' first."

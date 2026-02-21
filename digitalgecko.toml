@@ -77,3 +77,7 @@ exportGlyphNames = false
 
   [buildPlans.DigitalGecko.ligations]
   inherits = "dlig"
+
+# TTC collection (for super-ttc build)
+[collectPlans.DigitalGecko]
+from = ["DigitalGecko"]

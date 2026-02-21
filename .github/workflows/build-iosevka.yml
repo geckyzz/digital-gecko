@@ -39,21 +39,57 @@ jobs:
       - name: Build font with Task
         run: task all
 
-      - name: Prepare artifacts
+      - name: Prepare artifacts by filetype
         run: |
-          mkdir -p release
-          [ -d dist ] && cp dist/* release/ || true
-          ls -lh release/
+          mkdir -p release/{ttf,woff2,ttc}
+          [ -d dist/ttf ] && cp dist/ttf/* release/ttf/ || true
+          [ -d dist/woff2 ] && cp dist/woff2/* release/woff2/ || true
+          [ -d dist/ttc ] && cp dist/ttc/* release/ttc/ || true
+          echo "TTF files: $(ls release/ttf | wc -l)"
+          echo "WOFF2 files: $(ls release/woff2 | wc -l)"
+          echo "TTC files: $(ls release/ttc 2>/dev/null | wc -l || echo 0)"
 
-      - name: Upload artifacts
+      - name: Upload TTF artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: iosevka-digital-gecko-fonts
-          path: release/
+          name: iosevka-digital-gecko-ttf
+          path: release/ttf/
           retention-days: 90
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+      - name: Upload WOFF2 artifacts
+        uses: actions/upload-artifact@v6
         with:
-          files: release/*
+          name: iosevka-digital-gecko-woff2
+          path: release/woff2/
+          retention-days: 90
+
+      - name: Upload TTC artifacts
+        uses: actions/upload-artifact@v6
+        if: hashFiles('release/ttc/*') != ''
+        with:
+          name: iosevka-digital-gecko-ttc
+          path: release/ttc/
+          retention-days: 90
+
+      - name: Create release tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v$(date +%Y%m%d)"
+          echo "Creating release: $VERSION"
+          
+          # Check if tag already exists
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists, skipping release creation"
+            exit 0
+          fi
+          
+          # Create tag
+          git tag "$VERSION"
+          git push origin "$VERSION"
+          
+          # Create GitHub Release with artifacts
+          gh release create "$VERSION" \
+            --title "Digital Gecko Font Release - $(date +%Y-%m-%d)" \
+            --notes "Automated font build for $(date +%Y-%m-%d)" \
+            release/ttf/* release/woff2/* release/ttc/* 2>/dev/null || true
