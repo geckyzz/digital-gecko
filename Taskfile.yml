@@ -31,46 +31,89 @@ tasks:
       - cp digitalgecko.toml {{.IOSEVKA_DIR}}/private-build-plans.toml
 
   build:
-    desc: Build Digital Gecko font
+    desc: Build Digital Gecko font (TTF only by default for speed)
+    deps:
+      - build-ttf
+
+  build-contents:
+    desc: Build all static fonts (TTF, WOFF2)
     deps:
       - setup-config
     dir: "{{.IOSEVKA_DIR}}"
     cmds:
       - npm run build -- contents::{{.BUILD_PLAN}}
+
+  build-ttf:
+    desc: Build TTF files only (Fastest)
+    deps:
+      - setup-config
+    dir: "{{.IOSEVKA_DIR}}"
+    cmds:
+      - npm run build -- ttf::{{.BUILD_PLAN}}
+
+  build-web:
+    desc: Build WOFF2 files only
+    deps:
+      - setup-config
+    dir: "{{.IOSEVKA_DIR}}"
+    cmds:
+      - npm run build -- woff2::{{.BUILD_PLAN}}
+
+  build-ttc:
+    desc: Build TTC files
+    deps:
+      - setup-config
+    dir: "{{.IOSEVKA_DIR}}"
+    cmds:
       - npm run build -- ttc::{{.BUILD_PLAN}}
+
+  build-super-ttc:
+    desc: Build Super TTC files
+    deps:
+      - setup-config
+    dir: "{{.IOSEVKA_DIR}}"
+    cmds:
       - npm run build -- super-ttc::{{.BUILD_PLAN}}
 
   copy-fonts:
     desc: Copy and organize built fonts to project dist directory
     deps:
-      - build
+      # We don't depend on build here to allow running copy-fonts after any specific build
     cmds:
       - mkdir -p {{.DIST_DIR}}/ttf {{.DIST_DIR}}/woff2 {{.DIST_DIR}}/ttc
+      # Static TTF
       - |
-        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF-Unhinted/*.ttf; do
-          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/ttf/$(basename "$file" .ttf)-Unhinted.ttf"
-        done
+        if [ -d "{{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF" ]; then
+          for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF-Unhinted/*.ttf; do
+            [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/ttf/$(basename "$file" .ttf)-Unhinted.ttf"
+          done
+          for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF/*.ttf; do
+            [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/ttf/$(basename "$file")"
+          done
+        fi
+      # Static WOFF2
       - |
-        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/TTF/*.ttf; do
-          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/ttf/$(basename "$file")"
-        done
-      - |
-        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2-Unhinted/*.woff2; do
-          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/woff2/$(basename "$file" .woff2)-Unhinted.woff2"
-        done
-      - |
-        for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2/*.woff2; do
-          [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/woff2/$(basename "$file")"
-        done
+        if [ -d "{{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2" ]; then
+          for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2-Unhinted/*.woff2; do
+            [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/woff2/$(basename "$file" .woff2)-Unhinted.woff2"
+          done
+          for file in {{.IOSEVKA_DIR}}/dist/DigitalGecko/WOFF2/*.woff2; do
+            [ -f "$file" ] && cp "$file" "{{.DIST_DIR}}/woff2/$(basename "$file")"
+          done
+        fi
+      # TTC
       - find {{.IOSEVKA_DIR}}/dist/.ttc -name "*.ttc" -type f -exec cp {} {{.DIST_DIR}}/ttc/ \; 2>/dev/null || true
       - find {{.IOSEVKA_DIR}}/dist/.super-ttc -name "*.ttc" -type f -exec cp {} {{.DIST_DIR}}/ttc/ \; 2>/dev/null || true
-      - echo "TTF files:" && ls -1 {{.DIST_DIR}}/ttf/ | wc -l
-      - echo "WOFF2 files:" && ls -1 {{.DIST_DIR}}/woff2/ | wc -l
+      
+      - echo "Summary of copied fonts:"
+      - echo "TTF files:" && ls -1 {{.DIST_DIR}}/ttf/ 2>/dev/null | wc -l || echo "0"
+      - echo "WOFF2 files:" && ls -1 {{.DIST_DIR}}/woff2/ 2>/dev/null | wc -l || echo "0"
       - echo "TTC files:" && ls -1 {{.DIST_DIR}}/ttc/ 2>/dev/null | wc -l || echo "0"
 
   all:
-    desc: Complete build process (clone, install, build, copy)
+    desc: Complete build process (defaulting to contents build)
     deps:
+      - build-contents
       - copy-fonts
 
   clean:
@@ -87,4 +130,4 @@ tasks:
   list-fonts:
     desc: List built fonts in dist directory
     cmds:
-      - test -d {{.DIST_DIR}} && (echo "TTF:" && ls {{.DIST_DIR}}/ttf/ 2>/dev/null | wc -l && echo "WOFF2:" && ls {{.DIST_DIR}}/woff2/ 2>/dev/null | wc -l && echo "TTC:" && ls {{.DIST_DIR}}/ttc/ 2>/dev/null | wc -l) || echo "No fonts built yet. Run 'task all' first."
+      - test -d {{.DIST_DIR}} && (echo "TTF:" && ls {{.DIST_DIR}}/ttf/ 2>/dev/null | wc -l && echo "WOFF2:" && ls {{.DIST_DIR}}/woff2/ 2>/dev/null | wc -l && echo "TTC:" && ls {{.DIST_DIR}}/ttc/ 2>/dev/null | wc -l) || echo "No fonts built yet."

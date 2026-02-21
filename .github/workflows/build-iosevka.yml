@@ -9,6 +9,18 @@ on:
       - 'digitalgecko.toml'
       - '.github/workflows/build-iosevka.yml'
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'ttf'
+        type: choice
+        options:
+          - ttf
+          - web
+          - contents
+          - ttc
+          - all
 
 permissions:
   contents: write
@@ -37,7 +49,26 @@ jobs:
           version: 3.x
 
       - name: Build font with Task
-        run: task all
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            # Default for push: contents (TTF + WOFF2)
+            task build-contents copy-fonts
+          else
+            TYPE="${{ inputs.build_type }}"
+            if [ "$TYPE" == "all" ]; then
+              task build-contents build-ttc copy-fonts
+            elif [ "$TYPE" == "contents" ]; then
+              task build-contents copy-fonts
+            elif [ "$TYPE" == "ttf" ]; then
+              task build-ttf copy-fonts
+            elif [ "$TYPE" == "web" ]; then
+              task build-web copy-fonts
+            elif [ "$TYPE" == "ttc" ]; then
+              task build-ttc copy-fonts
+            else
+              task build-contents copy-fonts
+            fi
+          fi
 
       - name: Prepare artifacts by filetype
         run: |
@@ -45,12 +76,13 @@ jobs:
           [ -d dist/ttf ] && cp dist/ttf/* release/ttf/ || true
           [ -d dist/woff2 ] && cp dist/woff2/* release/woff2/ || true
           [ -d dist/ttc ] && cp dist/ttc/* release/ttc/ || true
-          echo "TTF files: $(ls release/ttf | wc -l)"
-          echo "WOFF2 files: $(ls release/woff2 | wc -l)"
+          echo "TTF files: $(ls release/ttf 2>/dev/null | wc -l)"
+          echo "WOFF2 files: $(ls release/woff2 2>/dev/null | wc -l)"
           echo "TTC files: $(ls release/ttc 2>/dev/null | wc -l || echo 0)"
 
       - name: Upload TTF artifacts
         uses: actions/upload-artifact@v6
+        if: hashFiles('release/ttf/*') != ''
         with:
           name: iosevka-digital-gecko-ttf
           path: release/ttf/
@@ -58,6 +90,7 @@ jobs:
 
       - name: Upload WOFF2 artifacts
         uses: actions/upload-artifact@v6
+        if: hashFiles('release/woff2/*') != ''
         with:
           name: iosevka-digital-gecko-woff2
           path: release/woff2/
