@@ -81,7 +81,7 @@ jobs:
           echo "TTC files: $(ls release/ttc 2>/dev/null | wc -l || echo 0)"
 
       - name: Upload TTF artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: hashFiles('release/ttf/*') != ''
         with:
           name: iosevka-digital-gecko-ttf
@@ -89,7 +89,7 @@ jobs:
           retention-days: 90
 
       - name: Upload WOFF2 artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: hashFiles('release/woff2/*') != ''
         with:
           name: iosevka-digital-gecko-woff2
@@ -97,7 +97,7 @@ jobs:
           retention-days: 90
 
       - name: Upload TTC artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: hashFiles('release/ttc/*') != ''
         with:
           name: iosevka-digital-gecko-ttc
