@@ -83,6 +83,36 @@ jobs:
           echo "WOFF2 files: $(ls release/woff2 2>/dev/null | wc -l)"
           echo "TTC files: $(ls release/ttc 2>/dev/null | wc -l || echo 0)"
 
+      - name: Bundle fonts per format, width and hinting
+        run: |
+          mkdir -p bundles
+          shopt -s nullglob
+          TTF_STD_HINTED=(); TTF_STD_UNHINTED=()
+          for f in dist/ttf/DigitalGecko-*.ttf; do [[ -e "$f" ]] || continue; [[ "$f" == *Extended* ]] && continue; [[ "$f" == *Unhinted* ]] && TTF_STD_UNHINTED+=("$f") || TTF_STD_HINTED+=("$f"); done
+          [ ${#TTF_STD_HINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-TTF-Standard.zip "${TTF_STD_HINTED[@]}" && echo "TTF Standard Hinted: ${#TTF_STD_HINTED[@]} -> $(du -h bundles/DigitalGecko-TTF-Standard.zip | cut -f1)"
+          [ ${#TTF_STD_UNHINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-TTF-Standard-Unhinted.zip "${TTF_STD_UNHINTED[@]}" && echo "TTF Standard Unhinted: ${#TTF_STD_UNHINTED[@]} -> $(du -h bundles/DigitalGecko-TTF-Standard-Unhinted.zip | cut -f1)"
+          TTF_EXT_HINTED=(); TTF_EXT_UNHINTED=()
+          for f in dist/ttf/*Extended*.ttf; do [[ -e "$f" ]] || continue; [[ "$f" == *Unhinted* ]] && TTF_EXT_UNHINTED+=("$f") || TTF_EXT_HINTED+=("$f"); done
+          [ ${#TTF_EXT_HINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-TTF-Extended.zip "${TTF_EXT_HINTED[@]}" && echo "TTF Extended Hinted: ${#TTF_EXT_HINTED[@]} -> $(du -h bundles/DigitalGecko-TTF-Extended.zip | cut -f1)"
+          [ ${#TTF_EXT_UNHINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-TTF-Extended-Unhinted.zip "${TTF_EXT_UNHINTED[@]}" && echo "TTF Extended Unhinted: ${#TTF_EXT_UNHINTED[@]} -> $(du -h bundles/DigitalGecko-TTF-Extended-Unhinted.zip | cut -f1)"
+          WOFF2_STD_HINTED=(); WOFF2_STD_UNHINTED=()
+          for f in dist/woff2/DigitalGecko-*.woff2; do [[ -e "$f" ]] || continue; [[ "$f" == *Extended* ]] && continue; [[ "$f" == *Unhinted* ]] && WOFF2_STD_UNHINTED+=("$f") || WOFF2_STD_HINTED+=("$f"); done
+          [ ${#WOFF2_STD_HINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-WOFF2-Standard.zip "${WOFF2_STD_HINTED[@]}" && echo "WOFF2 Standard Hinted: ${#WOFF2_STD_HINTED[@]} -> $(du -h bundles/DigitalGecko-WOFF2-Standard.zip | cut -f1)"
+          [ ${#WOFF2_STD_UNHINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-WOFF2-Standard-Unhinted.zip "${WOFF2_STD_UNHINTED[@]}" && echo "WOFF2 Standard Unhinted: ${#WOFF2_STD_UNHINTED[@]} -> $(du -h bundles/DigitalGecko-WOFF2-Standard-Unhinted.zip | cut -f1)"
+          WOFF2_EXT_HINTED=(); WOFF2_EXT_UNHINTED=()
+          for f in dist/woff2/*Extended*.woff2; do [[ -e "$f" ]] || continue; [[ "$f" == *Unhinted* ]] && WOFF2_EXT_UNHINTED+=("$f") || WOFF2_EXT_HINTED+=("$f"); done
+          [ ${#WOFF2_EXT_HINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-WOFF2-Extended.zip "${WOFF2_EXT_HINTED[@]}" && echo "WOFF2 Extended Hinted: ${#WOFF2_EXT_HINTED[@]} -> $(du -h bundles/DigitalGecko-WOFF2-Extended.zip | cut -f1)"
+          [ ${#WOFF2_EXT_UNHINTED[@]} -ne 0 ] && zip -j bundles/DigitalGecko-WOFF2-Extended-Unhinted.zip "${WOFF2_EXT_UNHINTED[@]}" && echo "WOFF2 Extended Unhinted: ${#WOFF2_EXT_UNHINTED[@]} -> $(du -h bundles/DigitalGecko-WOFF2-Extended-Unhinted.zip | cut -f1)"
+          if compgen -G "dist/ttc/*.ttc" > /dev/null; then
+            zip -j bundles/DigitalGecko-TTC.zip dist/ttc/*.ttc
+            echo "TTC: $(ls dist/ttc/*.ttc | wc -l) files -> $(du -h bundles/DigitalGecko-TTC.zip | cut -f1)"
+          fi
+          echo "--- bundles ---"
+          ls -lh bundles/ || true
+          echo "--- counts ---"
+          echo "TTF Standard hinted:${#TTF_STD_HINTED[@]} unhinted:${#TTF_STD_UNHINTED[@]} | Extended hinted:${#TTF_EXT_HINTED[@]} unhinted:${#TTF_EXT_UNHINTED[@]}"
+          echo "WOFF2 Standard hinted:${#WOFF2_STD_HINTED[@]} unhinted:${#WOFF2_STD_UNHINTED[@]} | Extended hinted:${#WOFF2_EXT_HINTED[@]} unhinted:${#WOFF2_EXT_UNHINTED[@]}"
+
       - name: Upload TTF artifacts
         uses: actions/upload-artifact@v7
         if: hashFiles('release/ttf/*') != ''
@@ -107,6 +137,14 @@ jobs:
           path: release/ttc/
           retention-days: 90
 
+      - name: Upload bundles
+        uses: actions/upload-artifact@v7
+        if: hashFiles('bundles/*.zip') != ''
+        with:
+          name: iosevka-digital-gecko-bundles
+          path: bundles/
+          retention-days: 90
+
       - name: Create release tag and GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -120,11 +158,13 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           shopt -s nullglob
-          FILES=(release/ttf/* release/woff2/* release/ttc/*)
+          BUNDLES=(bundles/*.zip)
+          FILES=("${BUNDLES[@]}" release/ttf/* release/woff2/* release/ttc/*)
           if [ ${#FILES[@]} -eq 0 ]; then
             echo "No files to release, skipping"
             exit 0
           fi
+          echo "Bundles: ${BUNDLES[*]:-none}"
           echo "Files to release: ${FILES[*]}"
 
           if gh release view "$VERSION" >/dev/null 2>&1; then
@@ -156,8 +196,35 @@ jobs:
               git push origin "$VERSION"
             fi
             echo "Creating GitHub Release $VERSION"
+            NOTES=$(cat <<'NOTES_EOF'
+          automated font build for $(date +%Y-%m-%d) — commit $(git rev-parse --short HEAD)
+
+          ### bundles — pick what you need
+          bundles are split by format (ttf for desktop, woff2 for web), width (standard = normal from `digitalgecko.toml`, extended = wider), and hinting (hinted = ttfautohint for windows, unhinted = smaller/cleaner for macos/high-dpi) — pretty much the same idea as the readme.
+
+          | bundle | content | when to pick |
+          |---|---|---|
+          | `DigitalGecko-TTF-Standard.zip` | 9 weights hinted | desktop windows — standard width |
+          | `DigitalGecko-TTF-Standard-Unhinted.zip` | 9 weights unhinted | desktop macos/linux or high-dpi |
+          | `DigitalGecko-TTF-Extended.zip` | 9 weights extended hinted | wider variant, desktop |
+          | `DigitalGecko-TTF-Extended-Unhinted.zip` | 9 weights extended unhinted | wider + unhinted |
+          | `DigitalGecko-WOFF2-Standard.zip` | 9 weights woff2 hinted | **web — recommended** (`~1.5 MB` vs `~10 MB` ttf) |
+          | `DigitalGecko-WOFF2-Standard-Unhinted.zip` | 9 weights woff2 unhinted | web smallest |
+          | `DigitalGecko-WOFF2-Extended.zip` | 9 weights extended woff2 hinted | web wider |
+          | `DigitalGecko-WOFF2-Extended-Unhinted.zip` | 9 weights extended unhinted | web wider smallest |
+          | `DigitalGecko-TTC.zip` | ttc collection | single ttc (if `build_type=all`) |
+
+          quick picks:
+          - **web minimal (4 files):** `DigitalGecko-Regular` + `Italic` + `Bold` + `BoldItalic` from `WOFF2-Standard` (or `-Unhinted` for smallest)
+          - **desktop minimal:** same 4 from `TTF-Standard` (hinted for windows, unhinted for macos)
+          - **full family:** grab `TTF-Standard` + `TTF-Extended` or `WOFF2` equivalents — 18 weights each (9×2 italics) per width
+          - **single weights:** individual `.ttf`/`.woff2` files also attached below bundles (144 files total) if you want single weights
+
+          all bundles are also available as per-file artifacts in actions.
+          NOTES_EOF
+            )
             gh release create "$VERSION" \
               --title "Digital Gecko Font Release - $(date +%Y-%m-%d)" \
-              --notes "Automated font build for $(date +%Y-%m-%d)" \
+              --notes "$NOTES" \
               "${FILES[@]}"
           fi
