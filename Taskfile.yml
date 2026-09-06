@@ -131,3 +131,28 @@ tasks:
     desc: List built fonts in dist directory
     cmds:
       - test -d {{.DIST_DIR}} && (echo "TTF:" && ls {{.DIST_DIR}}/ttf/ 2>/dev/null | wc -l && echo "WOFF2:" && ls {{.DIST_DIR}}/woff2/ 2>/dev/null | wc -l && echo "TTC:" && ls {{.DIST_DIR}}/ttc/ 2>/dev/null | wc -l) || echo "No fonts built yet."
+
+  render:
+    desc: Render banner, preview and pangram showcase images (2× retina)
+    cmds:
+      - python3 render.py --all
+
+  render-banner:
+    desc: Render banner only
+    cmds:
+      - python3 render.py banner
+
+  render-preview:
+    desc: Render glyph preview grid only
+    cmds:
+      - python3 render.py preview
+
+  render-pangram:
+    desc: Render pangram samples only (4 styles, borderless, minimal margins)
+    cmds:
+      - python3 render.py pangram
+
+  render-social:
+    desc: Render GitHub social preview (1280×640 and 2560×1280, 40pt safe border, centered)
+    cmds:
+      - python3 render.py social

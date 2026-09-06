@@ -1,10 +1,44 @@
-# digital gecko
-
-a custom [Iosevka](https://github.com/be5invis/Iosevka) typeface variant built for legibility, adaptability, readability, and accessibility.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/banner.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/banner-light.png">
+  <img alt="Digital Gecko banner" src="src/banner.png" width="100%">
+</picture>
 
 ## overview
 
-this repository contains a specialized build of Iosevka designed specifically for use on my personal website. the variant emphasizes clear letterforms and carefully selected glyphs to ensure the font remains readable across different media, screen sizes, and accessibility contexts.
+this repository contains a specialized build of [Iosevka](https://github.com/be5invis/Iosevka) designed specifically for use on my personal website. the variant emphasizes clear letterforms and carefully selected glyphs to ensure the font remains readable across different media, screen sizes, and accessibility contexts.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/preview.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/preview-light.png">
+  <img alt="Digital Gecko preview" src="src/preview.png" width="100%">
+</picture>
+
+## pangram showcase
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/sample-en.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/sample-en-light.png">
+  <img alt="English pangram" src="src/sample-en.png" width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/sample-id.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/sample-id-light.png">
+  <img alt="Indonesian / Malay pangram" src="src/sample-id.png" width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/sample-ru.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/sample-ru-light.png">
+  <img alt="Russian pangram" src="src/sample-ru.png" width="100%">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/sample-el.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/sample-el-light.png">
+  <img alt="Greek pangram" src="src/sample-el.png" width="100%">
+</picture>
 
 ## design choices
 
@@ -17,6 +51,16 @@ the custom variant includes:
 - **symbols**: compact at-sign and through dollar sign for clean appearance
 
 the configuration is defined in `digitalgecko.toml` using Iosevka's build system.
+
+<details>
+<summary>supported languages / scripts — 7562 glyphs</summary>
+
+* **latin** — 95 basic latin + 96 latin-1 supplement + ~436 extended-a/b — pretty much covers western/central europe — french, german (`ä ö ü ß`), spanish, portuguese, etc. — basic diacritics are all there
+* **cyrillic** — 256 glyphs `U+0400–U+04FF` — russian, ukrainian, bulgarian, serbian and friends
+* **greek** — 121 glyphs `U+0370–U+03FF` — modern greek, including polytonic
+* **symbols & features** — slashed zero `0Ø`, `1|l`, `*` penta-low, `~` low, `_{above-baseline}`, `{curly}`, `@fourfold`, `$-slanted-through`, `|force-upright`, pilcrow high, ligatures just `dlig` (`-> => != ==`)
+
+</details>
 
 ## building locally
 
