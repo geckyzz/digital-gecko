@@ -14,6 +14,14 @@ this repository contains a specialized build of [Iosevka](https://github.com/be5
   <img alt="Digital Gecko preview" src="src/preview.png" width="100%">
 </picture>
 
+all previews use extended, that's what the website uses.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="src/preview-weights.png">
+  <source media="(prefers-color-scheme: light)" srcset="src/preview-weights-light.png">
+  <img alt="Weights preview" src="src/preview-weights.png" width="100%">
+</picture>
+
 ## pangram showcase
 
 <picture>
@@ -54,6 +62,8 @@ the configuration is defined in `digitalgecko.toml` using Iosevka's build system
 
 <details>
 <summary>supported languages / scripts — 7562 glyphs</summary>
+
+*tl;dr, basically all what upstream Iosevka supported*
 
 * **latin** — 95 basic latin + 96 latin-1 supplement + ~436 extended-a/b — pretty much covers western/central europe — french, german (`ä ö ü ß`), spanish, portuguese, etc. — basic diacritics are all there
 * **cyrillic** — 256 glyphs `U+0400–U+04FF` — russian, ukrainian, bulgarian, serbian and friends
