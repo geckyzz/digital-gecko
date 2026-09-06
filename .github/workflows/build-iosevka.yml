@@ -12,7 +12,7 @@ on:
     inputs:
       build_type:
         description: 'Build Type'
-        required: true
+        required: false
         default: 'ttf'
         type: choice
         options:
@@ -32,6 +32,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -54,7 +57,7 @@ jobs:
             # Default for push: contents (TTF + WOFF2)
             task build-contents copy-fonts
           else
-            TYPE="${{ inputs.build_type }}"
+            TYPE="${{ inputs.build_type || 'ttf' }}"
             if [ "$TYPE" == "all" ]; then
               task build-contents build-ttc copy-fonts
             elif [ "$TYPE" == "contents" ]; then
@@ -108,21 +111,53 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -e
           VERSION="v$(date +%Y%m%d)"
-          echo "Creating release: $VERSION"
-          
-          # Check if tag already exists
-          if git rev-parse "$VERSION" >/dev/null 2>&1; then
-            echo "Tag $VERSION already exists, skipping release creation"
+          echo "Target version: $VERSION"
+          echo "Event: ${{ github.event_name }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          shopt -s nullglob
+          FILES=(release/ttf/* release/woff2/* release/ttc/*)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No files to release, skipping"
             exit 0
           fi
-          
-          # Create tag
-          git tag "$VERSION"
-          git push origin "$VERSION"
-          
-          # Create GitHub Release with artifacts
-          gh release create "$VERSION" \
-            --title "Digital Gecko Font Release - $(date +%Y-%m-%d)" \
-            --notes "Automated font build for $(date +%Y-%m-%d)" \
-            release/ttf/* release/woff2/* release/ttc/* 2>/dev/null || true
+          echo "Files to release: ${FILES[*]}"
+
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            echo "Release $VERSION already exists"
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+              echo "Manual dispatch → overriding release assets for $VERSION"
+              git tag -f "$VERSION"
+              git push origin "refs/tags/$VERSION" --force
+              echo "Uploading assets with --clobber"
+              gh release upload "$VERSION" "${FILES[@]}" --clobber
+              echo "Release $VERSION updated"
+            else
+              echo "Push event and release already exists → skipping"
+              exit 0
+            fi
+          else
+            echo "Release $VERSION does not exist → creating"
+            if git rev-parse "$VERSION" >/dev/null 2>&1; then
+              if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+                echo "Tag $VERSION exists without release → force-updating tag"
+                git tag -f "$VERSION"
+                git push origin "refs/tags/$VERSION" --force
+              else
+                echo "Tag $VERSION already exists → skipping"
+                exit 0
+              fi
+            else
+              git tag "$VERSION"
+              git push origin "$VERSION"
+            fi
+            echo "Creating GitHub Release $VERSION"
+            gh release create "$VERSION" \
+              --title "Digital Gecko Font Release - $(date +%Y-%m-%d)" \
+              --notes "Automated font build for $(date +%Y-%m-%d)" \
+              "${FILES[@]}"
+          fi
